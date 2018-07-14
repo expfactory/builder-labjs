@@ -9,9 +9,9 @@ const study = lab.util.fromObject({
     },
     {
       "type": "lab.plugins.Transmit",
-      "url": "\u002Fsave",
+      "url": "/save",
       "updates": {
-        "staging": false ,
+        "staging": false,
         "headers": {"X-CSRFToken": csrf_token}
       },
       "callbacks": {
