@@ -73,14 +73,16 @@ jobs:
             echo "2. Starting the Experiment Factory builder container"
             docker run -td --name expfactory-builder --rm=false --entrypoint bash vanessa/expfactory-builder 
             docker ps
+            echo "3. Copy experiments from host to container..."
+            docker cp ${EXPERIMENT_FOLDER}/* expfactory-builder:/data
             docker exec expfactory-builder /bin/bash /entrypoint.sh build ${EXPS} 
-            echo "3. Copy files from Docker container to host..."
+            echo "4. Copy files from Docker container to host..."
             docker cp expfactory-builder:/data/Dockerfile ${EXPERIMENT_FOLDER}/Dockerfile
             docker cp expfactory-builder:/data/startscript.sh ${EXPERIMENT_FOLDER}/startscript.sh
             echo "Stopping builder..."
             docker stop expfactory-builder
             docker rm expfactory-builder
-            echo "4. Building experiment container..."  
+            echo "5. Building experiment container..."  
             cat ${EXPERIMENT_FOLDER}/Dockerfile
             # Build experiment docker image
             e=1 && for i in {1..5}; do
