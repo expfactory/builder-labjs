@@ -19,6 +19,8 @@ const study = lab.util.fromObject({
         if (response && response.ok) {
           console.log(response);
           window.location = '/next';
+        } else {
+          console.log(response);          
         }
       }
       }
