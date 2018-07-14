@@ -59,14 +59,16 @@ jobs:
             cd ${EXPERIMENT_FOLDER}
             for e in $(ls $PWD)
               do
-                  EXPS="${EXPS} ${e}"
+                  # We add /data to indicate the file exists locally
+                  EXPS="${EXPS} /data/${e}"
               done
             # Add experiments from experiments.txt
             if [ -f "../experiments.txt" ]
               then
                 ADDITIONAL=$(cat ../experiments.txt);
+                # These experiments are not expected to exist
                 EXPS="${EXPS} ${ADDITIONAL}";            
-              fi
+              fi            
             echo "Experiments for install are: ${EXPS}"
             echo "2. Starting the Experiment Factory builder container"
             docker run -td --name expfactory-builder --rm=false --entrypoint bash vanessa/expfactory-builder 
