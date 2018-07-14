@@ -61,7 +61,8 @@ Finally, we can move the entire thing into the "experiments folder for it to be 
 mkdir -p experiments
 mv stroop-task experiments/
 ```
-
+If you wanted to add additional experiments from the [library](https://expfactory.github.io/experiments)
+you could add a single line (space separated) to an experiments.txt file in the main folder.
 
 ## 2. Build
 We now will recruit the builder to turn our folder into a reproducible experiment container!
