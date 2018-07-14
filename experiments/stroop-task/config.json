@@ -1,0 +1,12 @@
+{
+  "name": "Stroop task",
+  "exp_id": "stroop-task",
+  "url": "https://github.com/felixhenninger/lab.js/examples/",
+  "description": "An implementation of the classic paradigm introduced by Stroop (1935).",
+  "contributors": [
+    "Felix Henninger <mailbox@felixhenninger.com> (http://felixhenninger.com)"
+  ],
+  "template": "lab.js",
+  "instructions": "",
+  "time": 5
+}

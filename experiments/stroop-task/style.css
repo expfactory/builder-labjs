@@ -1,0 +1,22 @@
+/* Please define your custom styles here */
+
+.stroop-large {
+    font-size: 36px;
+    font-weight: bold;
+}
+
+.stroop-red {
+    color: red;
+}
+.stroop-blue {
+    color: blue;
+}
+.stroop-green {
+    color: green;
+}
+.stroop-orange {
+    color: orange;
+}
+.stroop-fixation {
+    color: gray;
+}
