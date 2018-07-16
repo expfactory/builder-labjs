@@ -15,13 +15,15 @@ const study = lab.util.fromObject({
         "incremental": false
       },
       "callbacks": {
+        "setup": function setup() {
+        this.headers['X-CSRFToken'] = window.csrf_token;
+      },
         "full": function full(response) {
         if (response && response.ok) {
           window.location = '/next';
         }
       }
-      },
-      "headers": {}
+      }
     }
   ],
   "metadata": {
