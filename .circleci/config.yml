@@ -4,6 +4,8 @@ jobs:
   # If you want to deploy your container to Docker Hub, you must
   #  1. define the CONTAINER_NAME environment variable for the project 
   #  2. Also define DOCKER_USER and DOCKER_PASS
+  #  3. Optionally add DOCKER_TAG to use a custom tag, otherwise will push
+  #     to the commit id and "latest"
   setup:
     environment:
       - TZ: "/usr/share/zoneinfo/America/Los_Angeles"
@@ -53,15 +55,27 @@ jobs:
                     CONTAINER_NAME="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
             fi
             echo "Container name is ${CONTAINER_NAME}"
+            # If not set, define DOCKER_TAG
+            if [ ! -n "${DOCKER_TAG:-}" ]
+                then
+                    DOCKER_TAG=$(echo "${CIRCLE_SHA1}" | cut -c1-10)
+            fi
             # Pull experiment Factory builder
             echo "1. Preparing experiment building environment"
             EXPERIMENT_FOLDER=$PWD/experiments
-            cd ${EXPERIMENT_FOLDER}
-            for e in $(ls $PWD)
-              do
-                  # We add /data to indicate the file exists locally
-                  EXPS="${EXPS} /data/${e}"
-              done
+            if [ -d "${EXPERIMENT_FOLDER}" ];
+            then
+                cd ${EXPERIMENT_FOLDER}
+                for e in $(ls $PWD)
+                  do
+                      # We add /data to indicate the file exists locally
+                      EXPS="${EXPS} /data/${e}"
+                  done
+            else
+                mkdir "${EXPERIMENT_FOLDER}"
+                cd "${EXPERIMENT_FOLDER}"
+                EXPS=""
+            fi
             # Add experiments from experiments.txt
             if [ -f "../experiments.txt" ]
               then
@@ -73,8 +87,12 @@ jobs:
             echo "2. Starting the Experiment Factory builder container"
             docker run -td --name expfactory-builder --rm=false --entrypoint bash vanessa/expfactory-builder 
             docker ps
-            echo "3. Copy experiments from host to container..."
-            docker cp ${EXPERIMENT_FOLDER}/* expfactory-builder:/data
+            # Check if the directory is empty
+            if [ $(ls  "${EXPERIMENT_FOLDER}/" | wc -l) != "0" ];
+              then
+                 echo "3. Copy experiments from host to container..."
+                 docker cp ${EXPERIMENT_FOLDER}/* expfactory-builder:/data
+              fi
             docker exec expfactory-builder /bin/bash /entrypoint.sh build ${EXPS} 
             echo "4. Copy files from Docker container to host..."
             docker cp expfactory-builder:/data/Dockerfile ${EXPERIMENT_FOLDER}/Dockerfile
@@ -89,7 +107,7 @@ jobs:
               docker build \
                 --cache-from=${CONTAINER_NAME} \
                 --rm=false \
-                -t ${CONTAINER_NAME}:latest . \
+                -t ${CONTAINER_NAME}:${DOCKER_TAG} . \
               && e=0 && break || sleep 15
             done && [ "$e" -eq "0" ]
       - run:
@@ -101,9 +119,13 @@ jobs:
                 then
                     CONTAINER_NAME="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
             fi
+            if [ ! -n "${DOCKER_TAG:-}" ]
+                then
+                    DOCKER_TAG=$(echo "${CIRCLE_SHA1}" | cut -c1-10)
+            fi
             echo "Saving ${CONTAINER_NAME} to container.tar.gz"
             mkdir -p /tmp/cache
-            docker save ${CONTAINER_NAME}:latest \
+            docker save ${CONTAINER_NAME}:${DOCKER_TAG} \
               | pigz -2 -p 3 > /tmp/cache/container.tar.gz
       - persist_to_workspace:
           root: /tmp
@@ -151,10 +173,15 @@ jobs:
                 then
                     CONTAINER_NAME="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
             fi
-            echo "The experiments installed in this container are:"
+            # If not set, define DOCKER_TAG
+            if [ ! -n "${DOCKER_TAG:-}" ]
+                then
+                    DOCKER_TAG=$(echo "${CIRCLE_SHA1}" | cut -c1-10)
+            fi
             echo "Container name set to ${CONTAINER_NAME}"
+            echo "The experiments installed in this container are:"
             docker run -it --rm=false \
-              ${CONTAINER_NAME}:latest ls /scif/apps
+              ${CONTAINER_NAME}:${DOCKER_TAG} ls /scif/apps
       - store_test_results:
           path: /home/circleci/out/tests
 
@@ -186,8 +213,12 @@ jobs:
                 then
                     CONTAINER_NAME="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
             fi
+            if [ ! -n "${DOCKER_TAG:-}" ]
+                then
+                    DOCKER_TAG=$(echo "${CIRCLE_SHA1}" | cut -c1-10)
+            fi
             echo "Here we could upload metadata, for example:"
-            docker run -it ${CONTAINER_NAME}:latest inspect
+            docker run -it ${CONTAINER_NAME}:${DOCKER_TAG} inspect
       - run:
           name: Deploy to Docker Hub
           no_output_timeout: 40m
@@ -198,9 +229,15 @@ jobs:
                 then
                     CONTAINER_NAME="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
             fi
+            if [ ! -n "${DOCKER_TAG:-}" ]
+                then
+                    DOCKER_TAG=$(echo "${CIRCLE_SHA1}" | cut -c1-10)
+            fi
             echo "Container name set to ${CONTAINER_NAME}"
             if [[ -n "$DOCKER_PASS" ]]; then
                   docker login -u $DOCKER_USER -p $DOCKER_PASS
+                  docker push ${CONTAINER_NAME}:${DOCKER_TAG}
+                  docker tag ${CONTAINER_NAME}:${DOCKER_TAG} ${CONTAINER_NAME}:latest
                   docker push ${CONTAINER_NAME}:latest
             fi
 workflows:
