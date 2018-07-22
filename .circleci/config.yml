@@ -87,10 +87,10 @@ jobs:
             echo "2. Starting the Experiment Factory builder container"
             docker run -td --name expfactory-builder --rm=false --entrypoint bash vanessa/expfactory-builder 
             docker ps
-            echo "3. Copy experiments from host to container..."
             # Check if the directory is empty
-            if find "${EXPERIMENT_FOLDER}" -mindepth 1 | read;
+            if [ $(ls  "${EXPERIMENT_FOLDER}/" | wc -l) != "0" ];
               then
+                 echo "3. Copy experiments from host to container..."
                  docker cp ${EXPERIMENT_FOLDER}/* expfactory-builder:/data
               fi
             docker exec expfactory-builder /bin/bash /entrypoint.sh build ${EXPS} 
